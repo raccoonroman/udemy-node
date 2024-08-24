@@ -4,23 +4,44 @@ const path = require('path');
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
+const session = require('express-session');
+const MongoDBStore = require('connect-mongodb-session')(session);
 
 const errorController = require('./controllers/error');
 const User = require('./models/User');
 
+const MONGODB_URI = `mongodb+srv://roman:${process.env.MONGODB_PASSWORD}@cluster0.pgdxj.mongodb.net/shop?retryWrites=true&w=majority&appName=Cluster0`;
+
 const app = express();
+const store = new MongoDBStore({
+  uri: MONGODB_URI,
+  collection: 'sessions',
+});
 
 app.set('view engine', 'ejs');
 app.set('views', 'views');
 
 const adminRoutes = require('./routes/admin');
 const shopRoutes = require('./routes/shop');
+const authRoutes = require('./routes/auth');
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(
+  session({
+    secret: 'my secret',
+    resave: false,
+    saveUninitialized: false,
+    store,
+  })
+);
 
 app.use((req, res, next) => {
-  User.findById('66c25507cf7b25269ac4645e')
+  if (!req.session.userId) {
+    return next();
+  }
+
+  User.findById(req.session.userId)
     .then((user) => {
       req.user = user;
       next();
@@ -32,13 +53,12 @@ app.use((req, res, next) => {
 
 app.use('/admin', adminRoutes);
 app.use(shopRoutes);
+app.use(authRoutes);
 
 app.use(errorController.get404);
 
 mongoose
-  .connect(
-    `mongodb+srv://roman:${process.env.MONGODB_PASSWORD}@cluster0.pgdxj.mongodb.net/shop?retryWrites=true&w=majority&appName=Cluster0`
-  )
+  .connect(MONGODB_URI)
   .then(() => {
     User.findOne().then((user) => {
       if (!user) {

@@ -1,10 +1,15 @@
 const Product = require('../models/Product');
 
 exports.getAddProduct = (req, res, next) => {
+  if (!req.session.isLoggedIn) {
+    return res.redirect('/login');
+  }
+
   res.render('admin/edit-product', {
     pageTitle: 'Add Product',
     path: '/admin/add-product',
     editing: false,
+    isAuthenticated: true,
   });
 };
 
@@ -31,6 +36,9 @@ exports.postAddProduct = (req, res, next) => {
 };
 
 exports.getEditProduct = (req, res, next) => {
+  if (!req.session.isLoggedIn) {
+    return res.redirect('/login');
+  }
   const editMode = req.query.edit;
   const productId = req.params.productId;
   if (!editMode) {
@@ -46,6 +54,7 @@ exports.getEditProduct = (req, res, next) => {
         path: '/admin/edit-product',
         editing: editMode,
         product,
+        isAuthenticated: true,
       });
     })
     .catch((err) => {
@@ -77,6 +86,10 @@ exports.postEditProduct = (req, res, next) => {
 };
 
 exports.getProducts = (req, res, next) => {
+  if (!req.session.isLoggedIn) {
+    return res.redirect('/login');
+  }
+
   Product.find()
     // .select('title price -_id')
     // .populate('userId', 'name')
@@ -85,6 +98,7 @@ exports.getProducts = (req, res, next) => {
         prods: products,
         pageTitle: 'Admin Products',
         path: '/admin/products',
+        isAuthenticated: true,
       });
     })
     .catch((err) => {
