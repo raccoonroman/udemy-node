@@ -9,9 +9,19 @@ const MongoDBStore = require('connect-mongodb-session')(session);
 const cookieParser = require('cookie-parser');
 const { doubleCsrf } = require('csrf-csrf');
 const flash = require('connect-flash');
+// const nodemailer = require('nodemailer');
+// const sendGridTransport = require('nodemailer-sendgrid-transport');
 
 const errorController = require('./controllers/error');
 const User = require('./models/User');
+
+// const transporter = nodemailer.createTransport(
+//   sendGridTransport({
+//     auth: {
+//       api_key: process.env.SENDGRID_API_KEY,
+//     },
+//   })
+// );
 
 const MONGODB_URI = `mongodb+srv://roman:${process.env.MONGODB_PASSWORD}@cluster0.pgdxj.mongodb.net/shop?retryWrites=true&w=majority&appName=Cluster0`;
 
