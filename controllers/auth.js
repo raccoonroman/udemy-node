@@ -1,44 +1,54 @@
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
+const { validationResult } = require('express-validator');
 
 const User = require('../models/User');
 
 exports.getSignup = (req, res, next) => {
-  const messageArray = req.flash('error');
+  // const messageArray = req.flash('error');
   res.render('auth/signup', {
     path: '/signup',
     pageTitle: 'Sign up',
-    errorMessage: messageArray.length > 0 ? messageArray[0] : null,
+    errorMessage: null,
+    // errorMessage: messageArray.length > 0 ? messageArray[0] : null,
+    oldInput: { email: '', password: '', confirmPassword: '' },
+    validationErros: [],
   });
 };
 
 exports.postSignup = (req, res, next) => {
   const { email, password, confirmPassword } = req.body;
-  User.findOne({ email })
-    .then((userDoc) => {
-      if (userDoc) {
-        req.flash('error', 'Email already exists, please pick a different one');
-        return res.redirect('/signup');
-      }
-      return bcrypt
-        .hash(password, 12)
-        .then((hashedPassword) => {
-          const user = new User({
-            email,
-            password: hashedPassword,
-            cart: { items: [] },
-          });
-          return user.save();
-        })
-        .then(() => {
-          res.redirect('/login');
-          // transporter.sendMail({
-          //   to: email,
-          //   from: 'nodejs@udemy.com',
-          //   subject: 'Signup succeeded',
-          //   html: '<h1>You successfully signed up!</h1>',
-          // });
-        });
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    console.log(errors.array());
+
+    return res.status(422).render('auth/signup', {
+      path: '/signup',
+      pageTitle: 'Sign up',
+      errorMessage: errors.array()[0].msg,
+      oldInput: { email, password, confirmPassword },
+      validationErros: errors.array(),
+    });
+  }
+
+  bcrypt
+    .hash(password, 12)
+    .then((hashedPassword) => {
+      const user = new User({
+        email,
+        password: hashedPassword,
+        cart: { items: [] },
+      });
+      return user.save();
+    })
+    .then(() => {
+      res.redirect('/login');
+      // transporter.sendMail({
+      //   to: email,
+      //   from: 'nodejs@udemy.com',
+      //   subject: 'Signup succeeded',
+      //   html: '<h1>You successfully signed up!</h1>',
+      // });
     })
     .catch((err) => console.log(err));
 };
@@ -48,16 +58,35 @@ exports.getLogin = (req, res, next) => {
   res.render('auth/login', {
     path: '/login',
     pageTitle: 'Login',
+    // errorMessage: null,
     errorMessage: messageArray.length > 0 ? messageArray[0] : null,
+    oldInput: { email: '', password: '' },
+    validationErros: [],
   });
 };
 
 exports.postLogin = (req, res, next) => {
+  const errors = validationResult(req);
   const { email, password } = req.body;
+  if (!errors.isEmpty()) {
+    return res.status(422).render('auth/login', {
+      path: '/login',
+      pageTitle: 'Login',
+      errorMessage: errors.array()[0].msg,
+      oldInput: { email, password },
+      validationErros: errors.array(),
+    });
+  }
+
   User.findOne({ email }).then((user) => {
     if (!user) {
-      req.flash('error', 'Invalid email or password');
-      return res.redirect('/login');
+      return res.status(422).render('auth/login', {
+        path: '/login',
+        pageTitle: 'Login',
+        errorMessage: 'Invalid email or password',
+        oldInput: { email, password },
+        validationErros: [],
+      });
     }
     bcrypt.compare(password, user.password).then((doMatch) => {
       if (doMatch) {
@@ -68,8 +97,13 @@ exports.postLogin = (req, res, next) => {
           res.redirect('/');
         });
       }
-      req.flash('error', 'Invalid email or password');
-      res.redirect('/login');
+      return res.status(422).render('auth/login', {
+        path: '/login',
+        pageTitle: 'Login',
+        errorMessage: 'Invalid email or password',
+        oldInput: { email, password },
+        validationErros: [],
+      });
     });
   });
 };
