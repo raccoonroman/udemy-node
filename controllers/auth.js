@@ -50,7 +50,11 @@ exports.postSignup = (req, res, next) => {
       //   html: '<h1>You successfully signed up!</h1>',
       // });
     })
-    .catch((err) => console.log(err));
+    .catch((err) => {
+      const error = new Error(err);
+      error.httpStatusCode = 500;
+      return next(error);
+    });
 };
 
 exports.getLogin = (req, res, next) => {
@@ -178,7 +182,11 @@ exports.getNewPassword = (req, res, next) => {
         errorMessage: messageArray.length > 0 ? messageArray[0] : null,
       });
     })
-    .catch((err) => console.log(err));
+    .catch((err) => {
+      const error = new Error(err);
+      error.httpStatusCode = 500;
+      return next(error);
+    });
 };
 
 exports.postNewPassword = (req, res, next) => {
@@ -202,5 +210,9 @@ exports.postNewPassword = (req, res, next) => {
     .then(() => {
       res.redirect('/login');
     })
-    .catch((err) => console.log(err));
+    .catch((err) => {
+      const error = new Error(err);
+      error.httpStatusCode = 500;
+      return next(error);
+    });
 };
