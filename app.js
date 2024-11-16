@@ -34,7 +34,7 @@ const store = new MongoDBStore({
 const { doubleCsrfProtection } = doubleCsrf({
   getSecret: (req) => 'Secret',
   size: 8,
-  getTokenFromRequest: (req) => req.body._csrf,
+  getTokenFromRequest: (req) => req.body._csrf || req.headers._csrf,
   cookieName: '_csrf',
 });
 
